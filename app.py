@@ -122,10 +122,22 @@ if "results" not in st.session_state: st.session_state.results = []
 upload_tab, run_tab, report_tab = st.tabs(["1. Collection", "2. Run", "3. Reports"])
 with upload_tab:
     file = st.file_uploader("Postman collection (.json)", type="json")
+    url = st.text_input("Or load from a URL (e.g., raw GitHub link or Postman public link)")
     left, right = st.columns(2)
     with left:
         if st.button("Load included sample"):
             with open("sample_collection.json", encoding="utf-8") as fh: st.session_state.collection = json.load(fh)
+    with right:
+        if st.button("Load from URL"):
+            if url:
+                try:
+                    resp = requests.get(url, timeout=10)
+                    resp.raise_for_status()
+                    st.session_state.collection = resp.json()
+                except Exception as exc:
+                    st.error(f"Failed to load from URL: {exc}")
+            else:
+                st.warning("Please enter a URL first.")
     if file:
         try: st.session_state.collection = json.load(file)
         except json.JSONDecodeError as exc: st.error(f"Invalid JSON: {exc}")
