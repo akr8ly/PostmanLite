@@ -1,0 +1,10 @@
+{
+  "info": {"name": "PostmanLite Sample", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+  "variable": [{"key": "base_url", "value": "https://jsonplaceholder.typicode.com"}],
+  "item": [
+    {"name": "Get a post", "request": {"method": "GET", "url": "{{base_url}}/posts/1"}},
+    {"name": "Nested folder", "item": [
+      {"name": "Create a post", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "url": "{{base_url}}/posts", "body": {"mode": "raw", "raw": "{\"title\": \"PostmanLite demo\", \"body\": \"hello\", \"userId\": 1}"}}}
+    ]}
+  ]
+}
