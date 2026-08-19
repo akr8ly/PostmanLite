@@ -119,68 +119,82 @@ st.caption("Upload a Postman Collection v2.1 export, set variables, and run requ
 if "collection" not in st.session_state: st.session_state.collection = None
 if "results" not in st.session_state: st.session_state.results = []
 
-upload_tab, run_tab, report_tab = st.tabs(["1. Collection", "2. Run", "3. Reports"])
-with upload_tab:
-    file = st.file_uploader("Postman collection (.json)", type="json")
-    url = st.text_input("Or load from a URL (e.g., raw GitHub link or Postman public link)")
-    left, right = st.columns(2)
-    with left:
-        if st.button("Load included sample"):
-            with open("sample_collection.json", encoding="utf-8") as fh: st.session_state.collection = json.load(fh)
-    with right:
-        if st.button("Load from URL"):
-            if url:
-                try:
-                    resp = requests.get(url, timeout=10)
-                    resp.raise_for_status()
-                    st.session_state.collection = resp.json()
-                except Exception as exc:
-                    st.error(f"Failed to load from URL: {exc}")
-            else:
-                st.warning("Please enter a URL first.")
-    if file:
-        try: st.session_state.collection = json.load(file)
-        except json.JSONDecodeError as exc: st.error(f"Invalid JSON: {exc}")
-    collection = st.session_state.collection
-    if collection:
-        errors = list(Draft7Validator(COLLECTION_SCHEMA).iter_errors(collection))
-        if errors: st.error("Not a valid Postman collection: " + "; ".join(e.message for e in errors))
+st.header("1. Collection")
+file = st.file_uploader("Postman collection (.json)", type="json")
+url = st.text_input("Or load from a URL (e.g., raw GitHub link or Postman public link)")
+left, right = st.columns(2)
+with left:
+    if st.button("Load included sample"):
+        with open("sample_collection.json", encoding="utf-8") as fh: st.session_state.collection = json.load(fh)
+with right:
+    if st.button("Load from URL"):
+        if url:
+            try:
+                resp = requests.get(url, timeout=10)
+                resp.raise_for_status()
+                data = resp.json()
+                if isinstance(data, dict) and "info" in data and "item" in data:
+                    st.session_state.collection = data
+                else:
+                    raise ValueError("Not a Postman collection")
+            except Exception:
+                st.session_state.collection = {
+                    "info": {"name": "Quick URL Test", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+                    "item": [{"name": url, "request": {"url": url, "method": "GET"}}]
+                }
+                st.info("Interpreted URL as a direct API endpoint. Generated a quick test.")
         else:
-            requests_found = flatten(collection["item"])
-            st.success(f"Loaded **{collection['info']['name']}** — {len(requests_found)} request(s) found.")
-            st.dataframe([{"Request": n, "Method": x["request"].get("method", "GET")} for n, x in requests_found], hide_index=True, use_container_width=True)
-
-with run_tab:
-    collection = st.session_state.collection
-    if not collection: st.info("Upload or load a collection in the first tab.")
+            st.warning("Please enter a URL first.")
+if file:
+    try: st.session_state.collection = json.load(file)
+    except json.JSONDecodeError as exc: st.error(f"Invalid JSON: {exc}")
+collection = st.session_state.collection
+if collection:
+    errors = list(Draft7Validator(COLLECTION_SCHEMA).iter_errors(collection))
+    if errors: st.error("Not a valid Postman collection: " + "; ".join(e.message for e in errors))
     else:
-        env_text = st.text_area("Environment variables (JSON)", value=json.dumps({v.get("key"): v.get("value", "") for v in collection.get("variable", []) if v.get("key")}, indent=2), height=150, help="Values override collection variables. Use them as {{variable_name}}.")
-        timeout = st.number_input("Request timeout (seconds)", min_value=1, max_value=300, value=30)
-        if st.button("Run collection", type="primary"):
-            supplied = parse_environment(env_text)
-            if supplied is not None:
-                executor = PostmanExecutor(variables_from(collection, supplied), int(timeout))
-                items = flatten(collection["item"]); results: list[Result] = []
-                progress = st.progress(0); log = st.empty()
-                for index, (name, item) in enumerate(items, 1):
-                    log.info(f"Running {index}/{len(items)}: {name}")
-                    result = executor.run_request(name, item); results.append(result)
-                    (log.success if result.ok else log.error)(f"{result.method} {result.url} → {result.status or 'ERROR'} ({result.elapsed_ms} ms){': ' + result.error if result.error else ''}")
-                    progress.progress(index / len(items))
-                st.session_state.results = results
-                st.session_state.report_title = collection["info"]["name"]
-                st.success(f"Finished: {sum(r.ok for r in results)}/{len(results)} passed.")
-        if st.session_state.results:
-            st.subheader("Latest results")
-            st.dataframe([asdict(r) for r in st.session_state.results], hide_index=True, use_container_width=True)
-            for r in st.session_state.results:
-                with st.expander(f"{r.method} {r.name} — {'PASS' if r.ok else 'FAIL'}"):
-                    st.code(r.error or r.preview or "No response body", language="json")
+        requests_found = flatten(collection["item"])
+        st.success(f"Loaded **{collection['info']['name']}** — {len(requests_found)} request(s) found.")
+        st.dataframe([{"Request": n, "Method": x["request"].get("method", "GET")} for n, x in requests_found], hide_index=True, use_container_width=True)
 
-with report_tab:
-    results = st.session_state.results
-    if not results: st.info("Run a collection to generate reports.")
-    else:
-        title = st.session_state.get("report_title", "PostmanLite")
-        st.download_button("Download Markdown report", markdown_report(results, title), "postmanlite-report.md", "text/markdown")
-        st.download_button("Download HTML report", html_report(results, title), "postmanlite-report.html", "text/html")
+st.divider()
+st.header("2. Run")
+collection = st.session_state.collection
+if not collection: st.info("Upload or load a collection above.")
+else:
+    env_text = st.text_area("Environment variables (JSON)", value=json.dumps({v.get("key"): v.get("value", "") for v in collection.get("variable", []) if v.get("key")}, indent=2), height=150, help="Values override collection variables. Use them as {{variable_name}}.")
+    timeout = st.number_input("Request timeout (seconds)", min_value=1, max_value=300, value=30)
+    if st.button("Run collection", type="primary"):
+        supplied = parse_environment(env_text)
+        if supplied is not None:
+            executor = PostmanExecutor(variables_from(collection, supplied), int(timeout))
+            items = flatten(collection["item"]); results: list[Result] = []
+            progress = st.progress(0); log = st.empty()
+            for index, (name, item) in enumerate(items, 1):
+                log.info(f"Running {index}/{len(items)}: {name}")
+                result = executor.run_request(name, item); results.append(result)
+                (log.success if result.ok else log.error)(f"{result.method} {result.url} → {result.status or 'ERROR'} ({result.elapsed_ms} ms){': ' + result.error if result.error else ''}")
+                progress.progress(index / len(items))
+            st.session_state.results = results
+            st.session_state.report_title = collection["info"]["name"]
+            st.success(f"Finished: {sum(r.ok for r in results)}/{len(results)} passed.")
+    if st.session_state.results:
+        st.subheader("Latest results")
+        st.dataframe([asdict(r) for r in st.session_state.results], hide_index=True, use_container_width=True)
+        for r in st.session_state.results:
+            with st.expander(f"{r.method} {r.name} — {'PASS' if r.ok else 'FAIL'}"):
+                st.code(r.error or r.preview or "No response body", language="json")
+
+st.divider()
+st.header("3. Reports")
+results = st.session_state.results
+if not results: st.info("Run a collection to generate reports.")
+else:
+    title = st.session_state.get("report_title", "PostmanLite")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.download_button("Download Markdown report", markdown_report(results, title), "postmanlite-report.md", "text/markdown", use_container_width=True)
+    with col2:
+        st.download_button("Download HTML report", html_report(results, title), "postmanlite-report.html", "text/html", use_container_width=True)
+    st.subheader("Report Preview")
+    st.markdown(markdown_report(results, title))
