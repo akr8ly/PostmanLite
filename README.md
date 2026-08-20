@@ -2,17 +2,21 @@
 
 A lightweight Streamlit runner for Postman Collection v2.1 JSON files. It runs requests sequentially, interpolates `{{variables}}`, shows live results, and exports HTML or Markdown reports.
 
-## Run locally
+## Quick Start
+
+From PowerShell:
 
 ```powershell
 cd D:\PostmanLite
-py -m venv .venv
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Use **Load included sample** for a quick check. The sample calls public JSONPlaceholder endpoints, so it requires internet access.
+In the browser, open the **Collection** tab, choose **Load included sample**, then open **Run** and select **Run collection**. Visit **Reports** to download the result. The sample calls public JSONPlaceholder endpoints, so it requires internet access.
+
+> **Note:** If `python` is not recognized, install Python 3.10 or newer and reopen PowerShell. If PowerShell blocks activation, run `Set-ExecutionPolicy -Scope Process Bypass` for the current terminal only.
 
 ## Variables
 
@@ -30,7 +34,7 @@ Use `{{base_url}}` or `{{token}}` in URLs, headers, and request bodies. Top-leve
 - URL, header, raw, form-url-encoded, and text form-data interpolation
 - Basic collection structure validation and connection/timeout errors
 
-Postman scripts, assertions, file uploads, cookies, OAuth flows, and full Postman environments are intentionally outside this MVP’s scope.
+Postman scripts, assertions, file uploads, cookies, OAuth flows, and full Postman environments are intentionally outside this MVP's scope.
 
 ## Streamlit Community Cloud
 

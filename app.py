@@ -1,4 +1,3 @@
-"""PostmanLite — a lightweight Postman Collection v2.1 runner."""
 from __future__ import annotations
 
 import html
@@ -57,6 +56,13 @@ def header_dict(headers: list[dict[str, Any]], variables: dict[str, str]) -> dic
     return {interpolate(h.get("key", ""), variables): interpolate(h.get("value", ""), variables)
             for h in headers if h.get("key") and not h.get("disabled")}
 
+def trim_payload(data: Any, max_items: int = 3) -> Any:
+    if isinstance(data, list):
+        return [trim_payload(item, max_items) for item in data[:max_items]]
+    elif isinstance(data, dict):
+        return {k: trim_payload(v, max_items) for k, v in data.items()}
+    return data
+
 
 class PostmanExecutor:
     def __init__(self, variables: dict[str, str], timeout: int):
@@ -80,13 +86,14 @@ class PostmanExecutor:
         try:
             response = self.session.request(method, url, **kwargs)
             elapsed = int((time.perf_counter() - started) * 1000)
-            preview = response.text[:1000]
-            # Make top-level JSON response fields available to later requests as {{field}}.
             try:
                 payload = response.json()
+                preview = json.dumps(trim_payload(payload, 3), indent=2)
+                # Make top-level JSON response fields available to later requests as {{field}}.
                 if isinstance(payload, dict):
                     self.variables.update({k: str(v) for k, v in payload.items() if isinstance(v, (str, int, float, bool))})
-            except (ValueError, TypeError): pass
+            except (ValueError, TypeError): 
+                preview = response.text[:1000]
             return Result(name, method, url, response.status_code, elapsed, response.ok, preview=preview)
         except requests.RequestException as exc:
             elapsed = int((time.perf_counter() - started) * 1000)
