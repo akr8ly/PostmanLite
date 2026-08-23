@@ -2,19 +2,52 @@
 
 A lightweight Streamlit runner for Postman Collection v2.1 JSON files. It runs requests sequentially, interpolates `{{variables}}`, shows live results, and exports HTML or Markdown reports.
 
-## Quick Start
+## Project structure
 
-From PowerShell:
+```text
+PostmanLite/
+├── backend/
+│   ├── app.py                  # Streamlit API runner
+│   ├── requirements.txt        # Python dependencies
+│   └── sample_collection.json  # Included demo collection
+├── frontend/
+│   ├── landing.html            # Marketing landing page
+│   ├── app.html                # Full-window runner shell
+│   └── serve.py                # Local frontend server
+└── README.md
+```
+
+## Local setup
+
+Run the following once from PowerShell:
 
 ```powershell
 cd D:\PostmanLite
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-streamlit run app.py
+.\.venv\Scripts\python.exe -m pip install -r .\backend\requirements.txt
 ```
 
-In the browser, open the **Collection** tab, choose **Load included sample**, then open **Run** and select **Run collection**. Visit **Reports** to download the result. The sample calls public JSONPlaceholder endpoints, so it requires internet access.
+## Start locally
+
+The frontend and backend are separate local processes. Keep both PowerShell windows open.
+
+### PowerShell window 1 — backend
+
+```powershell
+cd D:\PostmanLite
+.\.venv\Scripts\python.exe -m streamlit run .\backend\app.py
+```
+
+### PowerShell window 2 — frontend
+
+```powershell
+cd D:\PostmanLite
+.\.venv\Scripts\python.exe .\frontend\serve.py
+```
+
+Open `http://localhost:8080`. The landing page is served as a full browser page, and **Launch PostmanLite** opens the runner at `/app.html` on the same visible site.
+
+Load the included sample, run the collection, and use **Reports** to download the result. The user interface and runner are local, but the included sample calls public JSONPlaceholder endpoints and therefore requires internet access.
 
 > **Note:** If `python` is not recognized, install Python 3.10 or newer and reopen PowerShell. If PowerShell blocks activation, run `Set-ExecutionPolicy -Scope Process Bypass` for the current terminal only.
 
@@ -38,4 +71,4 @@ Postman scripts, assertions, file uploads, cookies, OAuth flows, and full Postma
 
 ## Streamlit Community Cloud
 
-Push these files to GitHub, create an app at Streamlit Community Cloud, choose the repository, and set the main file to `app.py`.
+Push these files to GitHub, create an app at Streamlit Community Cloud, choose the repository, and set the main file to `backend/app.py`.

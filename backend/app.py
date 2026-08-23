@@ -6,6 +6,7 @@ import re
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import requests
@@ -13,6 +14,119 @@ import streamlit as st
 from jsonschema import Draft7Validator
 
 st.set_page_config(page_title="PostmanLite", page_icon="⚡", layout="wide")
+
+
+def apply_app_theme() -> None:
+    st.markdown(
+        """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --pl-bg: #080806;
+            --pl-panel: rgba(18, 18, 14, .72);
+            --pl-panel-strong: #12120e;
+            --pl-amber: #ffb000;
+            --pl-orange: #ff6b35;
+            --pl-text: #e8e6e1;
+            --pl-muted: #8a8a7c;
+            --pl-border: rgba(255, 176, 0, .16);
+        }
+
+        html, body, [class*="css"] {font-family: 'Inter', system-ui, sans-serif;}
+        .stApp {
+            color: var(--pl-text);
+            background:
+                radial-gradient(circle at 12% 8%, rgba(255,176,0,.09), transparent 27rem),
+                radial-gradient(circle at 88% 30%, rgba(255,107,53,.07), transparent 30rem),
+                linear-gradient(180deg, #080806 0%, #0b0b09 55%, #080806 100%);
+            background-attachment: fixed;
+        }
+        header[data-testid="stHeader"] {background: rgba(8,8,6,.78); backdrop-filter: blur(16px);}
+        #MainMenu, footer {display: none;}
+        .stMainBlockContainer {max-width: 1120px; padding-top: 3.25rem; padding-bottom: 5rem;}
+
+        h1, h2, h3, label, p, .stMarkdown {color: var(--pl-text);}
+        h1 {
+            font-weight: 800;
+            max-width: 900px;
+            color: #f4f1e9 !important;
+            font-size: clamp(3rem, 6vw, 5.25rem) !important;
+            line-height: 1.02 !important;
+            letter-spacing: -.06em;
+            background: none;
+            -webkit-text-fill-color: currentColor;
+        }
+        h2 {font-weight: 700; letter-spacing: -.025em; padding-top: .35rem;}
+        [data-testid="stCaptionContainer"], [data-testid="stWidgetLabel"] p {color: var(--pl-muted);}
+        hr {border-color: var(--pl-border) !important;}
+        code, pre, [data-testid="stCode"] * {font-family: 'JetBrains Mono', monospace !important;}
+
+        [data-testid="stFileUploader"], [data-testid="stDataFrame"],
+        [data-testid="stExpander"], [data-testid="stAlert"], [data-testid="stCode"] {
+            border: 1px solid var(--pl-border);
+            border-radius: 14px;
+            background: var(--pl-panel);
+            box-shadow: 0 16px 44px rgba(0,0,0,.22);
+        }
+        [data-testid="stFileUploaderDropzone"] {
+            background: rgba(255,176,0,.035);
+            border-color: rgba(255,176,0,.25);
+        }
+        [data-testid="stFileUploader"] > label {display: none;}
+        [data-testid="stTextInputRootElement"], [data-baseweb="textarea"], [data-baseweb="input"],
+        [data-baseweb="base-input"], [data-baseweb="input"] > div {
+            color: var(--pl-text) !important;
+            background: rgba(18,18,14,.72) !important;
+            border-color: var(--pl-border) !important;
+            border-radius: 9px !important;
+        }
+        input, textarea {color: var(--pl-text) !important; caret-color: var(--pl-amber);}
+        input:focus, textarea:focus {border-color: var(--pl-amber) !important;}
+
+        .stButton > button, .stDownloadButton > button {
+            color: var(--pl-text);
+            background: rgba(255,176,0,.06);
+            border: 1px solid rgba(255,176,0,.28);
+            border-radius: 9px;
+            font-weight: 600;
+            transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+        }
+        .stButton > button:hover, .stDownloadButton > button:hover {
+            color: #fff;
+            border-color: var(--pl-amber);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 26px rgba(255,176,0,.12);
+        }
+        .stButton > button[kind="primary"] {
+            color: #100b00;
+            border: 0;
+            background: linear-gradient(110deg, var(--pl-amber), var(--pl-orange));
+            box-shadow: 0 10px 28px rgba(255,107,53,.2);
+        }
+        [data-testid="stProgress"] > div > div > div > div {
+            background: linear-gradient(90deg, var(--pl-amber), var(--pl-orange));
+        }
+        [data-testid="stExpander"] details summary:hover {color: var(--pl-amber);}
+        [data-testid="stDataFrame"] {overflow: hidden;}
+        [data-testid="stAlert"] {
+            color: var(--pl-text) !important;
+            background: rgba(18,18,14,.68) !important;
+            border-color: rgba(255,176,0,.13) !important;
+            box-shadow: inset 3px 0 0 rgba(255,176,0,.42), 0 16px 44px rgba(0,0,0,.18);
+        }
+        [data-testid="stAlert"] > div,
+        [data-testid="stAlert"] [data-baseweb="notification"] {
+            color: var(--pl-text) !important;
+            background: transparent !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+apply_app_theme()
 
 COLLECTION_SCHEMA = {
     "type": "object", "required": ["info", "item"],
@@ -132,7 +246,8 @@ url = st.text_input("Or load from a URL (e.g., raw GitHub link or Postman public
 left, right = st.columns(2)
 with left:
     if st.button("Load included sample"):
-        with open("sample_collection.json", encoding="utf-8") as fh: st.session_state.collection = json.load(fh)
+        sample_path = Path(__file__).with_name("sample_collection.json")
+        with sample_path.open(encoding="utf-8") as fh: st.session_state.collection = json.load(fh)
 with right:
     if st.button("Load from URL"):
         if url:
