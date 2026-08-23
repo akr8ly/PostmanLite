@@ -13,7 +13,7 @@ PostmanLite/
 │   ├── requirements.txt        # Python dependencies
 │   └── sample_collection.json  # Included demo collection
 ├── frontend/
-│   ├── landing.html            # Marketing landing page
+│   ├── index.html              # Marketing landing page
 │   ├── app.html                # Full-window runner shell
 │   └── serve.py                # Local frontend server
 └── README.md
@@ -85,3 +85,5 @@ If configuring a Render web service manually instead, leave the root directory b
 Build command: pip install -r backend/requirements.txt
 Start command: streamlit run backend/app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true
 ```
+
+Deploy the public landing page as a Render **Static Site** from the same repository with branch `master`, root directory `frontend`, and publish directory `.`. The frontend app shell is configured to embed the deployed Render backend.

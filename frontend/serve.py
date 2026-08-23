@@ -11,7 +11,7 @@ class PostmanLiteHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         if self.path in {"", "/"}:
-            self.path = "/landing.html"
+            self.path = "/index.html"
         super().do_GET()
 
 
