@@ -72,3 +72,14 @@ Postman scripts, assertions, file uploads, cookies, OAuth flows, and full Postma
 ## Streamlit Community Cloud
 
 Push these files to GitHub, create an app at Streamlit Community Cloud, choose the repository, and set the main file to `backend/app.py`.
+
+## Render
+
+The repository includes `render.yaml` for deploying the Streamlit backend from the `master` branch. In Render, create a **Blueprint** from this repository to apply the correct Python version, dependency path, start command, and health check automatically.
+
+If configuring a Render web service manually instead, leave the root directory blank and use:
+
+```text
+Build command: pip install -r backend/requirements.txt
+Start command: streamlit run backend/app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true
+```

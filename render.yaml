@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: postmanlite-backend-akr8ly
+    runtime: python
+    branch: master
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: streamlit run backend/app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true
+    healthCheckPath: /_stcore/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.10
