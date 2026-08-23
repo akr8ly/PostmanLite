@@ -6,6 +6,8 @@ A lightweight Streamlit runner for Postman Collection v2.1 JSON files. It runs r
 
 ```text
 PostmanLite/
+├── app.py                      # Deployment entry-point shim
+├── requirements.txt            # Deployment dependency shim
 ├── backend/
 │   ├── app.py                  # Streamlit API runner
 │   ├── requirements.txt        # Python dependencies
