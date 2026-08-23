@@ -1,3 +1,4 @@
-streamlit==1.40.2
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
 requests==2.32.3
 jsonschema==4.23.0

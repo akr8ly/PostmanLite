@@ -5,8 +5,8 @@ services:
     branch: master
     plan: free
     buildCommand: pip install -r backend/requirements.txt
-    startCommand: streamlit run backend/app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true
-    healthCheckPath: /_stcore/health
+    startCommand: uvicorn backend.server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
       - key: PYTHON_VERSION

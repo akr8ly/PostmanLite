@@ -1,21 +1,20 @@
 # PostmanLite Automated Runner
 
-A lightweight Streamlit runner for Postman Collection v2.1 JSON files. It runs requests sequentially, interpolates `{{variables}}`, shows live results, and exports HTML or Markdown reports.
+A single-service API testing workspace for Postman Collection v2.1 JSON files. FastAPI serves the landing page, browser workspace, and protected request-execution API from one origin.
 
 ## Project structure
 
 ```text
 PostmanLite/
-├── app.py                      # Deployment entry-point shim
 ├── requirements.txt            # Deployment dependency shim
 ├── backend/
-│   ├── app.py                  # Streamlit API runner
+│   ├── server.py               # FastAPI server and request runner
 │   ├── requirements.txt        # Python dependencies
 │   └── sample_collection.json  # Included demo collection
 ├── frontend/
 │   ├── index.html              # Marketing landing page
-│   ├── app.html                # Full-window runner shell
-│   └── serve.py                # Local frontend server
+│   └── app.html                # Native API workspace
+├── render.yaml                  # Single-service Render deployment
 └── README.md
 ```
 
@@ -31,23 +30,14 @@ python -m venv .venv
 
 ## Start locally
 
-The frontend and backend are separate local processes. Keep both PowerShell windows open.
-
-### PowerShell window 1 — backend
+The complete website runs from one process:
 
 ```powershell
 cd D:\PostmanLite
-.\.venv\Scripts\python.exe -m streamlit run .\backend\app.py
+.\.venv\Scripts\python.exe -m uvicorn backend.server:app --host 127.0.0.1 --port 8080 --reload
 ```
 
-### PowerShell window 2 — frontend
-
-```powershell
-cd D:\PostmanLite
-.\.venv\Scripts\python.exe .\frontend\serve.py
-```
-
-Open `http://localhost:8080`. The landing page is served as a full browser page, and **Launch PostmanLite** opens the runner at `/app.html` on the same visible site.
+Open `http://localhost:8080` for the landing page. **Launch PostmanLite** opens the workspace at `/app` on the same origin.
 
 Load the included sample, run the collection, and use **Reports** to download the result. The user interface and runner are local, but the included sample calls public JSONPlaceholder endpoints and therefore requires internet access.
 
@@ -71,19 +61,15 @@ Use `{{base_url}}` or `{{token}}` in URLs, headers, and request bodies. Top-leve
 
 Postman scripts, assertions, file uploads, cookies, OAuth flows, and full Postman environments are intentionally outside this MVP's scope.
 
-## Streamlit Community Cloud
-
-Push these files to GitHub, create an app at Streamlit Community Cloud, choose the repository, and set the main file to `backend/app.py`.
-
 ## Render
 
-The repository includes `render.yaml` for deploying the Streamlit backend from the `master` branch. In Render, create a **Blueprint** from this repository to apply the correct Python version, dependency path, start command, and health check automatically.
+The repository includes `render.yaml` for a single Render web service from the `master` branch. The same public domain serves `/`, `/app`, and `/api/*`.
 
 If configuring a Render web service manually instead, leave the root directory blank and use:
 
 ```text
 Build command: pip install -r backend/requirements.txt
-Start command: streamlit run backend/app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true
+Start command: uvicorn backend.server:app --host 0.0.0.0 --port $PORT
 ```
 
-Deploy the public landing page as a Render **Static Site** from the same repository with branch `master`, root directory `frontend`, and publish directory `.`. The frontend app shell is configured to embed the deployed Render backend.
+The executor blocks private/local/reserved destinations, revalidates redirects, limits collections to 25 requests, caps remote response previews, and limits per-request timeout to 30 seconds. Public production access should additionally add authentication, persistent rate limiting, audit logging, and a restrictive outbound network policy.
