@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import ipaddress, json, re, socket, time
+import ipaddress, json, os, re, socket, time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -14,6 +14,8 @@ from pydantic import BaseModel, Field
 ROOT = Path(__file__).resolve().parents[1]; FRONTEND = ROOT / "frontend"; SAMPLE = Path(__file__).with_name("sample_collection.json")
 MAX_REQUESTS = 25; MAX_REMOTE_BYTES = 2_000_000
 ALLOWED_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+ALLOW_PRIVATE_NETWORKS = os.getenv("POSTMANLITE_ALLOW_PRIVATE_NETWORKS", "false").lower() in {"1", "true", "yes", "on"}
+ALLOW_INSECURE_TLS = os.getenv("POSTMANLITE_ALLOW_INSECURE_TLS", "false").lower() in {"1", "true", "yes", "on"}
 VAR = re.compile(r"{{\s*([^{}\s]+)\s*}}")
 COLLECTION_SCHEMA = {"type":"object","required":["info","item"],"properties":{"info":{"type":"object","required":["name"]},"item":{"type":"array"}}}
 app = FastAPI(title="PostmanLite", docs_url=None, redoc_url=None)
@@ -48,22 +50,24 @@ def variables_from(collection: dict[str, Any], supplied: dict[str, Any]) -> dict
     values = {str(v["key"]):str(v.get("value", "")) for v in collection.get("variable",[]) if isinstance(v,dict) and v.get("key")}
     values.update({str(k):str(v) for k,v in supplied.items() if k}); return values
 
-def ensure_public_url(url: str) -> str:
+def ensure_allowed_url(url: str) -> str:
     parsed = urlparse(url)
     if parsed.scheme not in {"http","https"} or not parsed.hostname: raise ValueError("Only public HTTP and HTTPS URLs are allowed")
     try: addresses = {info[4][0] for info in socket.getaddrinfo(parsed.hostname, parsed.port or (443 if parsed.scheme == "https" else 80))}
     except socket.gaierror as exc: raise ValueError("Hostname could not be resolved") from exc
-    if any(not ipaddress.ip_address(address).is_global for address in addresses): raise ValueError("Private, local, and reserved network targets are blocked")
+    if not ALLOW_PRIVATE_NETWORKS and any(not ipaddress.ip_address(address).is_global for address in addresses):
+        raise ValueError("Private, local, and reserved network targets are blocked in hosted mode")
     return url
 
 def request_public(session: requests.Session, method: str, url: str, **kwargs: Any) -> requests.Response:
-    current = ensure_public_url(url)
+    current = ensure_allowed_url(url)
+    kwargs.setdefault("verify", not ALLOW_INSECURE_TLS)
     for _ in range(4):
         response = session.request(method, current, allow_redirects=False, **kwargs)
         if response.is_redirect or response.is_permanent_redirect:
             location = response.headers.get("location"); response.close()
             if not location: raise requests.RequestException("Redirect had no destination")
-            current = ensure_public_url(urljoin(current, location)); continue
+            current = ensure_allowed_url(urljoin(current, location)); continue
         return response
     raise requests.TooManyRedirects("Too many redirects")
 
@@ -103,6 +107,14 @@ def app_page(): return FileResponse(FRONTEND/"app.html")
 def legacy_app_page(): return RedirectResponse("/app",status_code=308)
 @app.get("/health")
 def health(): return {"status":"ok"}
+@app.get("/api/capabilities")
+def capabilities():
+    return {
+        "http": True,
+        "https": True,
+        "private_networks": ALLOW_PRIVATE_NETWORKS,
+        "insecure_tls": ALLOW_INSECURE_TLS,
+    }
 @app.get("/api/sample")
 def sample_collection(): return JSONResponse(json.loads(SAMPLE.read_text(encoding="utf-8")))
 @app.post("/api/collections/load")

@@ -41,6 +41,41 @@ Open `http://localhost:8080` for the landing page. **Launch PostmanLite** opens 
 
 Load the included sample, run the collection, and use **Reports** to download the result. The user interface and runner are local, but the included sample calls public JSONPlaceholder endpoints and therefore requires internet access.
 
+### Local and private APIs
+
+Plain HTTP endpoints are supported by default. To allow `localhost`, raw private IPs, and RFC 1918 networks in a trusted local/self-hosted installation, start PowerShell with:
+
+```powershell
+$env:POSTMANLITE_ALLOW_PRIVATE_NETWORKS = "true"
+.\.venv\Scripts\python.exe -m uvicorn backend.server:app --host 127.0.0.1 --port 8080 --reload
+```
+
+For a development server using a self-signed HTTPS certificate, you can additionally set:
+
+```powershell
+$env:POSTMANLITE_ALLOW_INSECURE_TLS = "true"
+```
+
+Insecure TLS disables certificate verification and should never be enabled on the public Render service. A hosted PostmanLite process also cannot access services bound only to your personal computer's localhost; run PostmanLite locally for that use case.
+
+### IPv4 and IPv6 localhost on Windows
+
+On Windows, Uvicorn's `::` listener can be IPv6-only. To expose the same local port through both address families, run these in two PowerShell windows:
+
+```powershell
+# IPv6 listener
+$env:POSTMANLITE_ALLOW_PRIVATE_NETWORKS = "true"
+.\.venv\Scripts\python.exe -m uvicorn backend.server:app --host :: --port 8080
+```
+
+```powershell
+# IPv4 listener
+$env:POSTMANLITE_ALLOW_PRIVATE_NETWORKS = "true"
+.\.venv\Scripts\python.exe -m uvicorn backend.server:app --host 0.0.0.0 --port 8080
+```
+
+This was verified with HTTP 200 responses from `http://[::1]:8080/health`, `http://127.0.0.1:8080/health`, and `http://localhost:8080/health`. Keep Render on a single `0.0.0.0` listener.
+
 > **Note:** If `python` is not recognized, install Python 3.10 or newer and reopen PowerShell. If PowerShell blocks activation, run `Set-ExecutionPolicy -Scope Process Bypass` for the current terminal only.
 
 ## Variables
@@ -72,4 +107,4 @@ Build command: pip install -r backend/requirements.txt
 Start command: uvicorn backend.server:app --host 0.0.0.0 --port $PORT
 ```
 
-The executor blocks private/local/reserved destinations, revalidates redirects, limits collections to 25 requests, caps remote response previews, and limits per-request timeout to 30 seconds. Public production access should additionally add authentication, persistent rate limiting, audit logging, and a restrictive outbound network policy.
+Hosted mode blocks private/local/reserved destinations by default, revalidates redirects, limits collections to 25 requests, caps remote response previews, and limits per-request timeout to 30 seconds. Public production access should additionally add authentication, persistent rate limiting, audit logging, and a restrictive outbound network policy.
