@@ -99,3 +99,4 @@ Thumbs.db
 # Local test files
 *.tmp
 test_*.json
+tests/
