@@ -8,9 +8,9 @@ PostmanLite's supported REST collection-running workflow was tested against 200 
 | --- | ---: |
 | Dummy HTTP servers | 200 |
 | Distinct server ports | 200 |
-| Real HTTP requests | 1,421 |
-| Assertions | 1,422 |
-| Passed | 1,422 |
+| Real HTTP requests | 1,627 |
+| Assertions | 1,628 |
+| Passed | 1,628 |
 | Failed | 0 |
 
 ## HTTP methods tested
@@ -22,12 +22,15 @@ PostmanLite's supported REST collection-running workflow was tested against 200 
 - `DELETE`
 - `HEAD`
 - `OPTIONS`
+- `QUERY` (RFC 10008)
 
 The unsupported `TRACE` method was also checked and was rejected as expected.
 
 ## Scenarios covered
 
 - Requests to every supported method on all 200 servers
+- RFC 10008 `QUERY` requests with JSON, URL-encoded, and plain-text query content
+- `QUERY` redirects with method and body preservation, delayed responses, and error responses
 - JSON, plain-text, URL-encoded, and text-only form-data request bodies
 - Custom headers and query parameters
 - Disabled headers and body fields
@@ -42,7 +45,7 @@ The unsupported `TRACE` method was also checked and was rejected as expected.
 
 ## Result
 
-All 1,422 assertions passed. No functional failures were found in the currently implemented HTTP collection-running workflow. The intentional abrupt-disconnection case produced connection-reset messages on the dummy server side, but PostmanLite handled the failure correctly.
+All 1,628 assertions passed. No functional failures were found in the currently implemented HTTP collection-running workflow. `QUERY` completed successfully against all 200 servers and across its dedicated body, redirect, delay, and error cases. The intentional abrupt-disconnection case produced connection-reset messages on the dummy server side, but PostmanLite handled the failure correctly.
 
 ## Known limitations and production risks
 

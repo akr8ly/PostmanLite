@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parents[1]; FRONTEND = ROOT / "frontend"; SAMPLE = Path(__file__).with_name("sample_collection.json")
 MAX_REQUESTS = 25; MAX_REMOTE_BYTES = 2_000_000
-ALLOWED_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+ALLOWED_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "QUERY"}
 ALLOW_PRIVATE_NETWORKS = os.getenv("POSTMANLITE_ALLOW_PRIVATE_NETWORKS", "false").lower() in {"1", "true", "yes", "on"}
 ALLOW_INSECURE_TLS = os.getenv("POSTMANLITE_ALLOW_INSECURE_TLS", "false").lower() in {"1", "true", "yes", "on"}
 VAR = re.compile(r"{{\s*([^{}\s]+)\s*}}")

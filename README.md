@@ -90,7 +90,7 @@ Use `{{base_url}}` or `{{token}}` in URLs, headers, and request bodies. Top-leve
 
 ## Supported collection features
 
-- Nested folders and GET, POST, PUT, PATCH, DELETE requests
+- Nested folders and GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, and RFC 10008 QUERY requests
 - URL, header, raw, form-url-encoded, and text form-data interpolation
 - Basic collection structure validation and connection/timeout errors
 
