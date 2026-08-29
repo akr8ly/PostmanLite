@@ -185,6 +185,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   letter-spacing:.16em;color:var(--dim);
 }
 .cap-dot{color:var(--amber);opacity:.4;font-size:.5rem}
+.capability-link{color:var(--amber);text-decoration:none;transition:color .2s,opacity .2s}
+.capability-link:hover{color:var(--orange)}
 
 /* ───────── Sections ───────── */
 section{position:relative;z-index:1;padding:100px 24px}
@@ -376,8 +378,9 @@ section{position:relative;z-index:1;padding:100px 24px}
 <div class="capability-strip reveal">
   <span>POSTMAN COLLECTIONS</span><span class="cap-dot">●</span>
   <span>REST APIs</span><span class="cap-dot">●</span>
+  <span>QUERY · RFC 10008</span><span class="cap-dot">●</span>
   <span>VARIABLE INTERPOLATION</span><span class="cap-dot">●</span>
-  <span>REPORTS</span>
+  <a class="capability-link" href="https://github.com/akr8ly/PostmanLite/blob/master/TEST_REPORT.md" target="_blank" rel="noopener noreferrer">TEST REPORT ↗</a>
 </div>
 
 <!-- ══════ FEATURES ══════ -->
